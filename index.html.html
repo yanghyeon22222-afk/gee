@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToMaTe - Trải Nghiệm Nhập Vai Trong Không Gian Sách Ảo 3D</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js for 3D Book Experience -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts Inter & Bubblegum Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-fredoka {
+            font-family: 'Fredoka', cursive, sans-serif;
+        }
+        /* Custom scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-rose-500 selection:text-white">
+
+    <!-- Top Role Navigation & Switcher Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-400 flex items-center justify-center font-fredoka text-2xl text-white font-bold shadow-lg shadow-rose-500/30">
+                        🍅
+                    </div>
+                    <div>
+                        <span class="font-fredoka text-2xl font-bold bg-gradient-to-r from-rose-400 via-amber-300 to-emerald-400 bg-clip-text text-transparent">ToMaTe</span>
+                        <span class="hidden sm:inline-block text-xs text-slate-400 ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">v2.6 Edu360</span>
+                    </div>
+                </div>
+
+                <!-- Role Selector Tabs -->
+                <nav class="flex items-center gap-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60">
+                    <button onclick="switchRole('customer')" id="nav-btn-customer" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 bg-rose-500 text-white shadow">
+                        <i data-lucide="smile" class="w-4 h-4"></i>
+                        <span>Phụ Huynh & Trẻ Em</span>
+                    </button>
+                    <button onclick="switchRole('publisher')" id="nav-btn-publisher" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50">
+                        <i data-lucide="book-open-check" class="w-4 h-4"></i>
+                        <span>Nhà Cung Cấp</span>
+                    </button>
+                    <button onclick="switchRole('admin')" id="nav-btn-admin" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50">
+                        <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                        <span>Vận Hành Platform</span>
+                    </button>
+                </nav>
+
+                <!-- Quick Action Stats / Auth status -->
+                <div id="header-user-badge" class="hidden md:flex items-center gap-3 text-xs bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="header-user-name" class="font-medium text-slate-200">Phụ huynh: Nguyễn Văn A</span>
+                    <span id="header-kid-active" class="bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded text-[11px] border border-rose-500/30">Bé Bo (5 tuổi)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Toast Alert Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <!-- MAIN APP CONTENT CONTAINERS FOR 3 ROLES -->
+    <main class="flex-1 bg-slate-50 relative overflow-x-hidden">
+
+        <!-- ========================================================================= -->
+        <!-- 1. PORTAL KHÁCH HÀNG (PHỤ HUYNH & TRẺ EM) -->
+        <!-- ========================================================================= -->
+        <section id="portal-customer" class="role-portal space-y-6 pb-16">
+            
+            <!-- Customer Hero Sub-header -->
+            <div class="bg-gradient-to-b from-rose-500 to-rose-600 text-white py-6 px-4 sm:px-6 shadow-md">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <h1 class="font-fredoka text-2xl sm:text-3xl font-bold flex items-center gap-2">
+                            <span>Chào mừng tới Thế Giới Sách Ảo 3D</span> 🌟
+                        </h1>
+                        <p class="text-rose-100 text-sm mt-1">Không gian đọc sách nhập vai 360°, âm thanh vòm sinh động & trợ lý AI Tutor cho bé</p>
+                    </div>
+
+                    <!-- Mode Toggle (Chế độ Phụ huynh vs Trẻ em) -->
+                    <div class="flex items-center bg-rose-700/60 p-1 rounded-2xl border border-rose-400/30">
+                        <button onclick="setKidMode(false)" id="mode-btn-parent" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-white text-rose-600 shadow-md">
+                            <i data-lucide="user-check" class="w-4 h-4"></i>
+                            <span>Giao diện Phụ Huynh</span>
+                        </button>
+                        <button onclick="setKidMode(true)" id="mode-btn-kid" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-white hover:bg-rose-600/50">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                            <span>Giao diện Bé Trải Nghiệm</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+
+                <!-- PARENT DASHBOARD CONTROLS (Displayed when parent mode is active) -->
+                <div id="parent-dashboard-panel" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Profile Kids & Timer Limit Card -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="users" class="w-5 h-5 text-rose-500"></i>
+                                <span>Hồ Sơ Của Trẻ</span>
+                            </h3>
+                            <button onclick="openModal('modal-create-kid')" class="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 transition">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm Hồ Sơ
+                            </button>
+                        </div>
+
+                        <!-- Active Kid Selector List -->
+                        <div id="kid-profiles-list" class="space-y-2">
+                            <!-- Populated via JS -->
+                        </div>
+
+                        <!-- Screen Time Limit Control -->
+                        <div class="pt-2 border-t space-y-3">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-medium text-slate-700 flex items-center gap-1">
+                                    <i data-lucide="timer" class="w-4 h-4 text-amber-500"></i> Giới hạn thời gian hôm nay:
+                                </span>
+                                <span id="timer-limit-display" class="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">30 phút</span>
+                            </div>
+                            <input type="range" min="10" max="120" step="10" value="30" id="timer-slider" oninput="updateTimeLimit(this.value)" class="w-full accent-rose-500 cursor-pointer">
+                            <div class="flex items-center justify-between text-[11px] text-slate-400">
+                                <span>10 phút</span>
+                                <span>60 phút</span>
+                                <span>120 phút</span>
+                            </div>
+                            <div class="bg-amber-50 rounded-xl p-3 border border-amber-200/60 flex items-start gap-2 text-xs text-amber-800">
+                                <i data-lucide="bell-ring" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                                <span>Khi hết giờ, hệ thống tự động tạm dừng trải nghiệm sách ảo và gửi thông báo nhắc bé nghỉ ngơi mắt.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subscription & Service Packages Card -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="credit-card" class="w-5 h-5 text-indigo-500"></i>
+                                <span>Gói Dịch Vụ & Bản Quyền</span>
+                            </h3>
+                            <span id="current-subscription-badge" class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">Gói Pro VIP (Active)</span>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
+                            <div class="flex justify-between font-medium">
+                                <span class="text-slate-500">Gói hiện tại:</span>
+                                <span class="text-slate-900 font-bold">ToMaTe Pro (99.000 VNĐ / tháng)</span>
+                            </div>
+                            <div class="flex justify-between text-slate-500">
+                                <span>Ngày hết hạn:</span>
+                                <span>30/11/2026</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden mt-1">
+                                <div class="bg-indigo-600 h-full w-3/4"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="openModal('modal-subscription')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs py-2.5 px-3 rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
+                                <i data-lucide="repeat" class="w-3.5 h-3.5"></i> Gia Hạn Gói Tháng
+                            </button>
+                            <button onclick="openModal('modal-history-transactions')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Lịch Sử Giao Dịch
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Experience History & Feedback Summary -->
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="line-chart" class="w-5 h-5 text-emerald-500"></i>
+                                <span>Tiến Trình Đọc Của Bé</span>
+                            </h3>
+                            <button onclick="openModal('modal-feedback')" class="text-xs text-indigo-600 hover:underline font-medium">Gửi Đánh Giá</button>
+                        </div>
+
+                        <div id="parent-history-list" class="space-y-2 max-h-44 overflow-y-auto pr-1">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- BOOK CATALOG SEARCH & FILTERS -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="font-fredoka text-xl text-slate-900 font-bold flex items-center gap-2">
+                                <i data-lucide="book-open" class="w-6 h-6 text-rose-500"></i>
+                                <span>Danh Mục Sách Ảo Tương Tác 360°</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Khám phá các tựa sách nhập vai đa giác quan theo lứa tuổi</p>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <!-- Age filter -->
+                            <select id="filter-age" onchange="filterCatalog()" class="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <option value="all">Tất cả độ tuổi</option>
+                                <option value="3-5">Độ tuổi 3 - 5 tuổi</option>
+                                <option value="6-9">Độ tuổi 6 - 9 tuổi</option>
+                                <option value="10-12">Độ tuổi 10 - 12 tuổi</option>
+                            </select>
+
+                            <!-- Category filter -->
+                            <select id="filter-category" onchange="filterCatalog()" class="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <option value="all">Tất cả thể loại</option>
+                                <option value="co-tich">Cổ Tích & Mơ Mộng</option>
+                                <option value="khoa-hoc">Khám Phá Khai Khoáng & Vũ Trụ</option>
+                                <option value="ky-nang">Kỹ Năng Sống & Cảm Xúc</option>
+                            </select>
+
+                            <!-- Pricing Tier -->
+                            <select id="filter-tier" onchange="filterCatalog()" class="text-xs bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                <option value="all">Tất cả loại sách</option>
+                                <option value="free">Miễn phí (Free Preview)</option>
+                                <option value="pro">Sách Pro VIP</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Book Cards Grid -->
+                    <div id="book-catalog-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+                        <!-- Populated dynamic book cards -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 2. PORTAL NHÀ CUNG CẤP BẢN QUYỀN (PUBLISHER / AUTHOR) -->
+        <!-- ========================================================================= -->
+        <section id="portal-publisher" class="role-portal hidden space-y-6 pb-16">
+            
+            <!-- Publisher Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white py-6 px-4 sm:px-6 shadow-md border-b border-indigo-900">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-indigo-500/20 text-indigo-300 text-xs px-2.5 py-1 rounded-full border border-indigo-500/30">Cổng Tác Giả & NXB</span>
+                            <span id="publisher-verified-badge" class="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full border border-emerald-500/30">✓ Đã Xác Minh Hợp Đồng</span>
+                        </div>
+                        <h1 class="font-fredoka text-2xl sm:text-3xl font-bold mt-1" id="publisher-name-display">NXB Kim Đồng - Đối Tác Bản Quyền</h1>
+                        <p class="text-slate-400 text-xs mt-1">Nộp kịch bản, xem trước bản dựng 3D 360°, nghiệm thu & theo dõi doanh thu phân chia real-time</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button onclick="openModal('modal-publisher-submit')" class="bg-rose-500 hover:bg-rose-600 text-white font-medium text-xs sm:text-sm px-4 py-2.5 rounded-xl transition shadow-lg shadow-rose-500/20 flex items-center gap-2">
+                            <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                            <span>Gửi Nội Dung / Kịch Bản Mới</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                
+                <!-- Publisher Analytics Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Tổng Lượt Tương Tác Sách</p>
+                            <h3 id="pub-stat-views" class="text-2xl font-bold text-slate-900 mt-1">45,280</h3>
+                            <span class="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                                <i data-lucide="trending-up" class="w-3 h-3"></i> +18% so với tháng trước
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="eye" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Đầu Sách Đã Xuất Bản</p>
+                            <h3 id="pub-stat-published" class="text-2xl font-bold text-slate-900 mt-1">8 Đầu Sách</h3>
+                            <span class="text-[11px] text-slate-400 mt-1 block">2 bản dựng đang chờ nghiệm thu</span>
+                        </div>
+                        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="book-marked" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Doanh Thu Tạm Tính (Tháng Này)</p>
+                            <h3 id="pub-stat-revenue" class="text-2xl font-bold text-emerald-600 mt-1">32.400.000 ₫</h3>
+                            <span class="text-[11px] text-slate-500 mt-1 block">Tỷ lệ chia sẻ: <strong>65% NXB / 35% Sàn</strong></span>
+                        </div>
+                        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-medium">Đánh Giá Trung Bình</p>
+                            <h3 class="text-2xl font-bold text-amber-500 mt-1 flex items-center gap-1">
+                                <span>4.9</span> <i data-lucide="star" class="w-5 h-5 fill-amber-400"></i>
+                            </h3>
+                            <span class="text-[11px] text-slate-400 mt-1 block">Từ 1,240 lượt feedback của phụ huynh</span>
+                        </div>
+                        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                            <i data-lucide="award" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publisher Books & Script Status Pipeline -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b pb-4">
+                        <div>
+                            <h2 class="font-fredoka text-lg text-slate-900 font-bold flex items-center gap-2">
+                                <i data-lucide="layers" class="w-5 h-5 text-indigo-600"></i>
+                                <span>Quản Lý Tiến Độ Dựng & Nghiệm Thu Sách 3D</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Quy trình: Nộp kịch bản -> Studio Dựng 3D -> NXB Xem trước Demo & Nghiệm thu -> Platform Xuất bản</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3 rounded-l-xl">Tên Đầu Sách</th>
+                                    <th class="p-3">Độ Tuổi Target</th>
+                                    <th class="p-3">Loại Nội Dung</th>
+                                    <th class="p-3">Trạng Thái Dựng 3D Studio</th>
+                                    <th class="p-3">Lượt Xem / Doanh Thu</th>
+                                    <th class="p-3 text-right rounded-r-xl">Hành Động Nghiệm Thu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="publisher-books-table-body" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- 3. PORTAL NHÀ VẬN HÀNH PLATFORM (ADMIN CONSOLE) -->
+        <!-- ========================================================================= -->
+        <section id="portal-admin" class="role-portal hidden space-y-6 pb-16">
+            
+            <!-- Admin Header Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white py-6 px-4 sm:px-6 shadow-md border-b border-rose-900">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-rose-500/20 text-rose-300 text-xs px-2.5 py-1 rounded-full border border-rose-500/30">Hệ Thống Admin Console</span>
+                            <span class="bg-emerald-500/20 text-emerald-300 text-xs px-2.5 py-1 rounded-full border border-emerald-500/30">Platform Online 99.9%</span>
+                        </div>
+                        <h1 class="font-fredoka text-2xl sm:text-3xl font-bold mt-1">ToMaTe Admin System & Content Moderation</h1>
+                        <p class="text-slate-400 text-xs mt-1">Cấu hình sàn, xác minh đối tác, kiểm duyệt an toàn trẻ em & đối soát tài chính</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="openModal('modal-admin-config')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
+                            <i data-lucide="settings" class="w-4 h-4"></i> Cấu Hình Sàn
+                        </button>
+                        <button onclick="triggerReconciliation()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-md">
+                            <i data-lucide="dollar-sign" class="w-4 h-4"></i> Quyết Toán Doanh Thu
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+                
+                <!-- Admin Workflow Tabs -->
+                <div class="flex items-center border-b border-slate-200 space-x-6 text-sm font-medium">
+                    <button onclick="switchAdminTab('partners')" id="admin-tab-btn-partners" class="pb-3 text-rose-600 border-b-2 border-rose-600 font-bold flex items-center gap-2">
+                        <i data-lucide="user-check" class="w-4 h-4"></i>
+                        <span>Xác Minh Đối Tác (1 Chờ Duyệt)</span>
+                    </button>
+                    <button onclick="switchAdminTab('moderation')" id="admin-tab-btn-moderation" class="pb-3 text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Kiểm Duyệt & Xuất Bản Sách 3D</span>
+                    </button>
+                    <button onclick="switchAdminTab('reconciliation')" id="admin-tab-btn-reconciliation" class="pb-3 text-slate-500 hover:text-slate-800 flex items-center gap-2">
+                        <i data-lucide="calculator" class="w-4 h-4"></i>
+                        <span>Đối Soát Doanh Thu & Hợp Đồng</span>
+                    </button>
+                </div>
+
+                <!-- Admin Tab 1: Partner Verification & E-Contracts -->
+                <div id="admin-tab-partners" class="admin-subtab space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-indigo-600"></i>
+                            <span>Danh Sách Hồ Sơ Đối Tác Đăng Ký Bản Quyền</span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-500 uppercase font-semibold">
+                                    <tr>
+                                        <th class="p-3">Tên Nhà Cung Cấp / NXB</th>
+                                        <th class="p-3">Mã Số Thuế / Giấy Phép</th>
+                                        <th class="p-3">Tỷ Lệ Chia Sẻ</th>
+                                        <th class="p-3">Trạng Thái Hồ Sơ</th>
+                                        <th class="p-3 text-right">Thao Tác Duyệt & Cấp Quyền</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-partner-requests-body" class="divide-y divide-slate-100">
+                                    <!-- Dynamic -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 2: Content Moderation & Publishing -->
+                <div id="admin-tab-moderation" class="admin-subtab hidden space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i>
+                            <span>Kiểm Duyệt Tiêu Chuẩn An Toàn Cho Trẻ Em Before Xuất Bản</span>
+                        </h3>
+                        <p class="text-xs text-slate-500">Checklist: Ngôn từ phù hợp lứa tuổi, không có chuyển động 3D gây chóng mặt, nhạc nền vừa đủ, AI Tutor hỏi đáp tích cực.</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2" id="admin-moderation-list">
+                            <!-- Dynamic pending publishing items -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 3: Revenue Reconciliation -->
+                <div id="admin-tab-reconciliation" class="admin-subtab hidden space-y-4">
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                                <i data-lucide="pie-chart" class="w-5 h-5 text-amber-500"></i>
+                                <span>Báo Cáo Bảng Lương & Phân Chia Doanh Thu NXB</span>
+                            </h3>
+                            <button onclick="exportReconciliationReport()" class="text-xs bg-slate-100 hover:bg-slate-200 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i> Xuất Báo Cáo Excel
+                            </button>
+                        </div>
+                        <div id="admin-reconciliation-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL 1: INTERACTIVE 3D VIRTUAL BOOK READER (360° EXPERIENCE) -->
+    <!-- ========================================================================= -->
+    <div id="modal-reader-3d" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex flex-col justify-between p-2 sm:p-4 backdrop-blur-md">
+        <!-- 3D Reader Control Topbar -->
+        <div class="bg-slate-900/90 border border-slate-800 text-white rounded-2xl p-3 px-5 flex items-center justify-between shadow-2xl z-10">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-xl bg-rose-500 flex items-center justify-center font-bold text-sm">3D</div>
+                <div>
+                    <h3 id="reader-book-title" class="font-fredoka text-base sm:text-lg font-bold text-rose-300">Dế Mèn Phiêu Lưu Ký (Tập 1)</h3>
+                    <p id="reader-book-meta" class="text-slate-400 text-xs">Chương 1: Môi trường đồng cỏ 360° | Spatial Audio Enabled</p>
+                </div>
+            </div>
+
+            <!-- Spatial Audio & Controls -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="toggleSpatialAudio()" id="btn-spatial-audio" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5">
+                    <i data-lucide="volume-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Âm Thanh Vòm 3D On</span>
+                </button>
+
+                <div class="h-5 w-px bg-slate-700"></div>
+
+                <button onclick="triggerAiTutor()" class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition animate-bounce">
+                    <i data-lucide="bot" class="w-4 h-4"></i>
+                    <span>Trợ Lý AI Tutor</span>
+                </button>
+
+                <button onclick="close3DReader()" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-xl hover:bg-slate-700 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3D Canvas Viewport Container -->
+        <div id="three-canvas-container" class="relative flex-1 rounded-2xl my-2 overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+            
+            <!-- 3D Canvas element will be dynamically appended here -->
+
+            <!-- Interactive Hotspot Overlay Instructions -->
+            <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur text-white p-3 rounded-xl border border-slate-700/60 text-xs max-w-xs space-y-1 pointer-events-none">
+                <div class="font-bold text-rose-400 flex items-center gap-1">
+                    <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                    <span>Thao tác trải nghiệm:</span>
+                </div>
+                <p class="text-slate-300">• Xoay chuột / Vuốt màn hình để quay góc nhìn 360° POV</p>
+                <p class="text-slate-300">• Bấm vào điểm sáng (Hotspot) để tương tác nhân vật & nghe kể chuyện</p>
+            </div>
+
+            <!-- AI Tutor Interactive Dialog Popover -->
+            <div id="ai-tutor-popover" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-slate-900 rounded-2xl p-4 shadow-2xl border-2 border-amber-400 max-w-md w-full z-20 space-y-3">
+                <div class="flex items-center justify-between border-b pb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-amber-400 flex items-center justify-center font-bold text-slate-900 text-sm">🤖</div>
+                        <div>
+                            <h4 class="font-bold text-xs text-slate-900">AI Tutor - Bạn Đồng Hành</h4>
+                            <p class="text-[10px] text-slate-500">Đặt câu hỏi tương tác phát triển tư duy</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAiTutor()" class="text-slate-400 hover:text-slate-600">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div id="ai-tutor-question-box" class="space-y-2 text-xs">
+                    <p class="font-semibold text-rose-600">Câu hỏi thử thách tư duy:</p>
+                    <p id="ai-tutor-question-text" class="text-slate-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">"Theo em, tại sao Dế Mèn lại cảm thấy hối hận sau khi trêu chọc Cốc gia gia?"</p>
+                    <div id="ai-tutor-answers-grid" class="grid grid-cols-1 gap-1.5 pt-1">
+                        <!-- Dynamic choices -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3D Reader Bottom Controls -->
+        <div class="bg-slate-900/90 border border-slate-800 text-white rounded-2xl p-3 px-5 flex items-center justify-between shadow-2xl z-10">
+            <div class="text-xs text-slate-400">
+                Tiến độ đọc: <span id="reader-progress-percent" class="text-emerald-400 font-bold">45%</span> (Đang tương tác)
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="prevBookScene()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold flex items-center gap-1">
+                    <i data-lucide="chevron-left" class="w-4 h-4"></i> Cảnh Trước
+                </button>
+                <button onclick="nextBookScene()" class="px-4 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-xs font-bold flex items-center gap-1 shadow-md">
+                    Cảnh Tiếp <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <button onclick="finishBookSession()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition flex items-center gap-1">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>Hoàn Thành Session</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- OTHER MODALS: CREATE KID PROFILE, SUBSCRIPTION, PUBLISHER SUBMIT, FEEDBACK -->
+    <!-- ========================================================================= -->
+
+    <!-- Modal Create Kid Profile -->
+    <div id="modal-create-kid" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-fredoka text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-rose-500"></i>
+                    <span>Tạo Hồ Sơ Mới Cho Trẻ</span>
+                </h3>
+                <button onclick="closeModal('modal-create-kid')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleCreateKid(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tên Tên Của Bé:</label>
+                    <input type="text" id="input-kid-name" required placeholder="Ví dụ: Bé Bống, Bé Bi..." class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Độ Tuổi:</label>
+                    <select id="input-kid-age" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                        <option value="3-5">3 - 5 tuổi (Mầm non)</option>
+                        <option value="6-9" selected>6 - 9 tuổi (Tiểu học cơ bản)</option>
+                        <option value="10-12">10 - 12 tuổi (Tiểu học nâng cao)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Sở Thích Nổi Bật:</label>
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" name="interest" value="Cổ tích" checked class="accent-rose-500"> Cổ tích & Phép thuật
+                        </label>
+                        <label class="flex items-center gap-2 p-2 border rounded-xl cursor-pointer hover:bg-slate-50">
+                            <input type="checkbox" name="interest" value="Khoa học" class="accent-rose-500"> Vũ trụ & Khoa học
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-create-kid')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md">Tạo Hồ Sơ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Subscription Checkout -->
+    <div id="modal-subscription" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-fredoka text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-indigo-600"></i>
+                    <span>Đăng Ký / Gia Hạn Gói Dịch Vụ ToMaTe</span>
+                </h3>
+                <button onclick="closeModal('modal-subscription')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div onclick="selectSubPlan('monthly')" id="plan-card-monthly" class="border-2 border-indigo-600 bg-indigo-50/50 p-4 rounded-2xl cursor-pointer relative space-y-2">
+                    <span class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Phổ biến nhất</span>
+                    <h4 class="font-bold text-slate-900 text-sm">Gói Tháng Pro</h4>
+                    <p class="text-indigo-600 font-fredoka text-lg font-bold">99.000 ₫ <span class="text-xs text-slate-500 font-normal">/ tháng</span></p>
+                    <ul class="text-slate-600 space-y-1">
+                        <li>✓ Truy cập 100+ sách 3D 360°</li>
+                        <li>✓ Đầy đủ Spatial Audio vòm</li>
+                        <li>✓ Trợ lý AI Tutor tương tác</li>
+                    </ul>
+                </div>
+
+                <div onclick="selectSubPlan('yearly')" id="plan-card-yearly" class="border-2 border-slate-200 p-4 rounded-2xl cursor-pointer hover:border-slate-300 space-y-2">
+                    <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Tiết kiệm 25%</span>
+                    <h4 class="font-bold text-slate-900 text-sm">Gói Năm VIP</h4>
+                    <p class="text-emerald-600 font-fredoka text-lg font-bold">890.000 ₫ <span class="text-xs text-slate-500 font-normal">/ năm</span></p>
+                    <ul class="text-slate-600 space-y-1">
+                        <li>✓ Mọi quyền lợi Gói Tháng</li>
+                        <li>✓ Tặng kèm 2 tựa sách Pro độc quyền</li>
+                        <li>✓ Ưu tiên trải nghiệm tính năng mới</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <p class="font-semibold text-slate-700">Chọn phương thức thanh toán trực tuyến:</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <label class="flex flex-col items-center gap-1 p-2 border rounded-xl cursor-pointer bg-white hover:border-rose-500">
+                        <input type="radio" name="payment_method" value="momo" checked class="accent-rose-500">
+                        <span class="font-bold text-rose-600">Ví MoMo</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1 p-2 border rounded-xl cursor-pointer bg-white hover:border-indigo-500">
+                        <input type="radio" name="payment_method" value="vnpay" class="accent-indigo-500">
+                        <span class="font-bold text-indigo-600">VNPAY QR</span>
+                    </label>
+                    <label class="flex flex-col items-center gap-1 p-2 border rounded-xl cursor-pointer bg-white hover:border-emerald-500">
+                        <input type="radio" name="payment_method" value="card" class="accent-emerald-500">
+                        <span class="font-bold text-emerald-600">Thẻ Visa/Master</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+                <button onclick="closeModal('modal-subscription')" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold text-xs">Đóng</button>
+                <button onclick="processCheckout()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-500/30 flex items-center gap-1">
+                    <i data-lucide="lock" class="w-3.5 h-3.5"></i> Thanh Toán Ngay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Publisher Submit Script -->
+    <div id="modal-publisher-submit" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-fredoka text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-rose-500"></i>
+                    <span>Gửi Bản Thảo & Kịch Bản Chuyển Thể 3D</span>
+                </h3>
+                <button onclick="closeModal('modal-publisher-submit')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handlePublisherSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tên Đầu Sách / Tác Phẩm:</label>
+                    <input type="text" id="pub-input-title" required placeholder="Nhập tên sách..." class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Độ Tuổi Target:</label>
+                        <select id="pub-input-age" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                            <option value="3-5">3 - 5 tuổi</option>
+                            <option value="6-9" selected>6 - 9 tuổi</option>
+                            <option value="10-12">10 - 12 tuổi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Thể Loại:</label>
+                        <select id="pub-input-cat" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                            <option value="co-tich">Cổ Tích</option>
+                            <option value="khoa-hoc">Khoa Học</option>
+                            <option value="ky-nang">Kỹ Năng Sống</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tải Lên File Bản Thảo (PDF/DOCX/AUDIO):</label>
+                    <div class="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:bg-slate-50 cursor-pointer">
+                        <i data-lucide="file-up" class="w-8 h-8 text-slate-400 mx-auto mb-1"></i>
+                        <span class="text-slate-600 font-medium">Kéo thả file kịch bản hoặc click chọn tệp</span>
+                        <p class="text-[10px] text-slate-400 mt-1">Đã chọn: ban_thao_de_men_tap2_2026.pdf (12.4 MB)</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Ghi Chú Đề Xuất Dựng 3D & Âm Thanh Vòm:</label>
+                    <textarea id="pub-input-notes" rows="2" placeholder="Gợi ý hiệu ứng bối cảnh, giọng đọc nhân vật..." class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-rose-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="pt-3 border-t flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-publisher-submit')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md">Gửi Cho Studio Dựng 3D</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Parent Feedback -->
+    <div id="modal-feedback" class="fixed inset-0 bg-slate-900/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-fredoka text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-5 h-5 text-indigo-600"></i>
+                    <span>Gửi Đánh Giá & Feedback Cho NXB</span>
+                </h3>
+                <button onclick="closeModal('modal-feedback')" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleFeedbackSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Chọn Sách Đã Trải Nghiệm:</label>
+                    <select id="feedback-book-select" class="w-full border border-slate-300 rounded-xl p-2.5">
+                        <!-- Populated -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Mức Độ Hài Lòng Của Trẻ:</label>
+                    <div class="flex gap-2">
+                        <span class="text-2xl cursor-pointer hover:scale-125 transition">⭐</span>
+                        <span class="text-2xl cursor-pointer hover:scale-125 transition">⭐</span>
+                        <span class="text-2xl cursor-pointer hover:scale-125 transition">⭐</span>
+                        <span class="text-2xl cursor-pointer hover:scale-125 transition">⭐</span>
+                        <span class="text-2xl cursor-pointer hover:scale-125 transition">⭐</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nhận Xét Của Phụ Huynh & Bé:</label>
+                    <textarea id="feedback-comment" rows="3" placeholder="Bé rất thích phần âm thanh vòm và câu hỏi AI Tutor..." class="w-full border border-slate-300 rounded-xl p-2.5"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('modal-feedback')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold">Đóng</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md">Gửi Phản Hồi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- JAVASCRIPT APPLICATION CORE LOGIC -->
+    <!-- ========================================================================= -->
+    <script>
+        // APP GLOBAL STATE ENGINE
+        const AppState = {
+            currentRole: 'customer', // 'customer' | 'publisher' | 'admin'
+            isKidMode: false,
+            
+            // Kids profiles under active parent account
+            kidsProfiles: [
+                { id: 'kid-1', name: 'Bé Bo', age: '3-5', ageLabel: '5 tuổi', interests: ['Cổ tích', 'Động vật'] },
+                { id: 'kid-2', name: 'Bé Bống', age: '6-9', ageLabel: '8 tuổi', interests: ['Khoa học', 'Vũ trụ'] }
+            ],
+            activeKidId: 'kid-1',
+            screenTimeLimitMinutes: 30,
+
+            // Subscription State
+            subscription: {
+                status: 'Pro VIP',
+                expires: '30/11/2026',
+                plan: 'monthly'
+            },
+
+            // Books Master Registry
+            books: [
+                {
+                    id: 'book-1',
+                    title: 'Dế Mèn Phiêu Lưu Ký',
+                    author: 'Tô Hoài / NXB Kim Đồng',
+                    ageGroup: '6-9',
+                    category: 'co-tich',
+                    tier: 'pro',
+                    coverBg: 'from-amber-400 to-rose-500',
+                    views: 12450,
+                    studioStatus: 'published', // 'draft', 'preview_ready', 'approved', 'published'
+                    description: 'Nhập vai chú Dế Mèn kiêu hãnh trong không gian đồng cỏ 3D 360° với tiếng dế kêu định hướng.',
+                    quiz: {
+                        question: 'Tại sao Dế Mèn lại hối hận sau khi trêu chọc Cốc gia gia?',
+                        options: [
+                            'Vì khiến Dế Choắt bị hiểu nhầm và chịu hậu quả',
+                            'Vì bị chị Cốc mắng',
+                            'Vì bị mất đồ chơi'
+                        ],
+                        correctIndex: 0
+                    }
+                },
+                {
+                    id: 'book-2',
+                    title: 'Thạch Sanh Bắn Đại Bàng',
+                    author: 'NXB Giáo Dục',
+                    ageGroup: '3-5',
+                    category: 'co-tich',
+                    tier: 'free',
+                    coverBg: 'from-emerald-400 to-teal-600',
+                    views: 8900,
+                    studioStatus: 'published',
+                    description: 'Trải nghiệm trận chiến với Đại Bàng tinh thần thoại qua góc nhìn thứ nhất POV đỉnh cao.',
+                    quiz: {
+                        question: 'Vũ khí thần kỳ giúp Thạch Sanh giải cứu công chúa là gì?',
+                        options: [
+                            'Cung tên vàng và Đàn thần',
+                            'Gươm thần',
+                            'Chiếc rìu sắt'
+                        ],
+                        correctIndex: 0
+                    }
+                },
+                {
+                    id: 'book-3',
+                    title: 'Hành Trình Vào Lõi Trái Đất',
+                    author: 'Đơn Vị Bản Quyền Tri Thức',
+                    ageGroup: '10-12',
+                    category: 'khoa-hoc',
+                    tier: 'pro',
+                    coverBg: 'from-blue-500 to-indigo-700',
+                    views: 15100,
+                    studioStatus: 'published',
+                    description: 'Khám phá magma, các tầng địa chất và hóa thạch cổ đại trong môi trường 360° tương tác.',
+                    quiz: {
+                        question: 'Tầng trung tâm nhất của Trái Đất được gọi là gì?',
+                        options: [
+                            'Lõi (Nhân) Trái Đất',
+                            'Vỏ Trái Đất',
+                            'Lớp Manti'
+                        ],
+                        correctIndex: 0
+                    }
+                },
+                {
+                    id: 'book-4',
+                    title: 'Sự Tích Bánh Chưng Bánh Giầy',
+                    author: 'NXB Kim Đồng',
+                    ageGroup: '6-9',
+                    category: 'co-tich',
+                    tier: 'pro',
+                    coverBg: 'from-rose-400 to-pink-600',
+                    views: 3200,
+                    studioStatus: 'preview_ready', // Pending publisher approval!
+                    description: 'Nhập vai Lang Liêu làm bánh dâng Vua Hùng với câu đố tư duy về ẩm thực dân tộc.',
+                    quiz: {
+                        question: 'Bánh Chưng tượng trưng cho biểu tượng gì?',
+                        options: [
+                            'Mặt Đất bao la vuông vắn',
+                            'Bầu Trời tròn xanh',
+                            'Mặt Trăng'
+                        ],
+                        correctIndex: 0
+                    }
+                }
+            ],
+
+            // Publisher Partner Registrations
+            partners: [
+                { id: 'p-1', name: 'NXB Kim Đồng', taxCode: '0100234123', shareRate: '65%', status: 'approved' },
+                { id: 'p-2', name: 'Sách Trẻ Edu', taxCode: '0300987112', shareRate: '60%', status: 'pending' }
+            ],
+
+            // History Records of Kid Reading
+            experienceHistory: [
+                { id: 'h-1', kidName: 'Bé Bo', bookTitle: 'Thạch Sanh Bắn Đại Bàng', durationMin: 18, score: '10/10', date: 'Hôm nay, 14:20' },
+                { id: 'h-2', kidName: 'Bé Bống', bookTitle: 'Hành Trình Vào Lõi Trái Đất', durationMin: 25, score: '9/10', date: 'Hôm qua, 19:45' }
+            ]
+        };
+
+
+        // Initialize Lucide Icons & Render Portal
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            renderKidProfiles();
+            renderBookCatalog();
+            renderPublisherTable();
+            renderAdminPartners();
+            renderAdminModeration();
+            renderAdminReconciliation();
+            renderParentHistory();
+        });
+
+        // Switch Main Platform Roles
+        function switchRole(role) {
+            AppState.currentRole = role;
+
+            // Highlight Header Buttons
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700/50';
+            });
+            const activeNavBtn = document.getElementById(`nav-btn-${role}`);
+            if (activeNavBtn) {
+                activeNavBtn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-1.5 bg-rose-500 text-white shadow';
+            }
+
+            // Hide/Show Role Portals
+            document.querySelectorAll('.role-portal').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`portal-${role}`).classList.remove('hidden');
+
+            showToast(`Đã chuyển sang giao diện: ${role === 'customer' ? 'Phụ huynh & Trẻ em' : role === 'publisher' ? 'Nhà cung cấp bản quyền' : 'Vận hành Platform'}`);
+        }
+
+        // Toggle Kid Mode vs Parent Mode
+        function setKidMode(isKid) {
+            AppState.isKidMode = isKid;
+            const parentPanel = document.getElementById('parent-dashboard-panel');
+            const btnParent = document.getElementById('mode-btn-parent');
+            const btnKid = document.getElementById('mode-btn-kid');
+
+            if (isKid) {
+                parentPanel.classList.add('hidden');
+                btnParent.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-white hover:bg-rose-600/50';
+                btnKid.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-white text-rose-600 shadow-md';
+                showToast('🚀 Đã bật giao diện Trẻ em: Tối ưu nút tương tác lớn & màu sắc sinh động!');
+            } else {
+                parentPanel.classList.remove('hidden');
+                btnParent.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 bg-white text-rose-600 shadow-md';
+                btnKid.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center gap-2 text-white hover:bg-rose-600/50';
+            }
+        }
+
+        // Render Kid Profile Items
+        function renderKidProfiles() {
+            const container = document.getElementById('kid-profiles-list');
+            if (!container) return;
+
+            container.innerHTML = AppState.kidsProfiles.map(kid => {
+                const isActive = kid.id === AppState.activeKidId;
+                return `
+                    <div onclick="selectKidProfile('${kid.id}')" class="p-2.5 rounded-xl border ${isActive ? 'border-rose-500 bg-rose-50/60' : 'border-slate-200 hover:bg-slate-50'} cursor-pointer transition flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-rose-400 flex items-center justify-center text-white font-bold text-xs">
+                                👦
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">${kid.name}</h4>
+                                <p class="text-[10px] text-slate-500">${kid.ageLabel} • ${kid.interests.join(', ')}</p>
+                            </div>
+                        </div>
+                        ${isActive ? '<span class="text-rose-600 font-bold text-xs">✓ Đang chọn</span>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectKidProfile(id) {
+            AppState.activeKidId = id;
+            renderKidProfiles();
+            const kid = AppState.kidsProfiles.find(k => k.id === id);
+            if (kid) {
+                document.getElementById('header-kid-active').innerText = `${kid.name} (${kid.ageLabel})`;
+                showToast(`Đã chuyển hồ sơ người dùng sang: ${kid.name}`);
+            }
+        }
+
+        function updateTimeLimit(val) {
+            AppState.screenTimeLimitMinutes = val;
+            document.getElementById('timer-limit-display').innerText = `${val} phút`;
+        }
+
+        // Filter & Render Book Catalog Cards
+        function renderBookCatalog() {
+            const grid = document.getElementById('book-catalog-grid');
+            if (!grid) return;
+
+            const ageFilter = document.getElementById('filter-age')?.value || 'all';
+            const catFilter = document.getElementById('filter-category')?.value || 'all';
+            const tierFilter = document.getElementById('filter-tier')?.value || 'all';
+
+            const filtered = AppState.books.filter(b => {
+                if (ageFilter !== 'all' && b.ageGroup !== ageFilter) return false;
+                if (catFilter !== 'all' && b.category !== catFilter) return false;
+                if (tierFilter !== 'all' && b.tier !== tierFilter) return false;
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-8 text-center text-slate-400 text-xs">Không tìm thấy đầu sách phù hợp bộ lọc</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(book => {
+                const isPro = book.tier === 'pro';
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+                        <div class="h-36 bg-gradient-to-tr ${book.coverBg} p-4 relative flex flex-col justify-between text-white">
+                            <div class="flex justify-between items-start">
+                                <span class="bg-black/30 backdrop-blur px-2 py-0.5 rounded-full text-[10px] font-semibold border border-white/20">
+                                    Độ tuổi ${book.ageGroup}
+                                </span>
+                                ${isPro ? '<span class="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-bold shadow">PRO VIP</span>' : '<span class="bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-full text-[10px] font-bold shadow">MIỄN PHÍ</span>'}
+                            </div>
+
+                            <div class="text-center my-auto">
+                                <span class="text-4xl group-hover:scale-110 transition duration-300 inline-block">📖</span>
+                            </div>
+
+                            <div class="text-[10px] text-white/80 font-medium">
+                                👁️ ${book.views.toLocaleString()} lượt trải nghiệm
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-fredoka font-bold text-slate-900 text-sm group-hover:text-rose-600 transition">${book.title}</h3>
+                                <p class="text-[11px] text-slate-400 font-medium mt-0.5">${book.author}</p>
+                                <p class="text-xs text-slate-600 line-clamp-2 mt-2">${book.description}</p>
+                            </div>
+
+                            <div class="pt-3 border-t flex items-center gap-2">
+                                <button onclick="launch3DReader('${book.id}', true)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-xl transition text-center">
+                                    Xem Preview
+                                </button>
+                                <button onclick="launch3DReader('${book.id}', false)" class="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs py-2 rounded-xl transition shadow-md shadow-rose-500/20 text-center">
+                                    Vào 3D 360°
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCatalog() {
+            renderBookCatalog();
+        }
+
+        function renderPublisherTable() {
+            const body = document.getElementById('publisher-books-table-body');
+            if (!body) return;
+
+            body.innerHTML = AppState.books.map(b => {
+                let statusBadge = '';
+                let actionBtn = '';
+
+                if (b.studioStatus === 'published') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-[10px]">Đã Xuất Bản</span>`;
+                    actionBtn = `<button onclick="launch3DReader('${b.id}', false)" class="text-indigo-600 font-semibold hover:underline">Xem Trực Tiếp</button>`;
+                } else if (b.studioStatus === 'preview_ready') {
+                    statusBadge = `<span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full text-[10px] animate-pulse">Chờ NXB Nghiệm Thu Demo</span>`;
+                    actionBtn = `
+                        <div class="flex items-center justify-end gap-1">
+                            <button onclick="launch3DReader('${b.id}', true)" class="bg-indigo-50 text-indigo-600 font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-100">Xem Demo</button>
+                            <button onclick="publisherApproveBook('${b.id}')" class="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg shadow hover:bg-emerald-700">Duyệt & Cho Xuất Bản</button>
+                        </div>
+                    `;
+                } else {
+                    statusBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px]">Studio Đang Dựng 3D</span>`;
+                    actionBtn = `<span class="text-slate-400">Đang xử lý...</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-800">${b.title}</td>
+                        <td class="p-3 text-slate-600">${b.ageGroup} tuổi</td>
+                        <td class="p-3 text-slate-600">${b.category}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 font-medium">${b.views.toLocaleString()} views</td>
+                        <td class="p-3 text-right">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function publisherApproveBook(id) {
+            const book = AppState.books.find(b => b.id === id);
+            if (book) {
+                book.studioStatus = 'published';
+                renderPublisherTable();
+                renderBookCatalog();
+                renderAdminModeration();
+                showToast(`🎉 NXB đã chính thức nghiệm thu & duyệt phát hành sách: ${book.title}`);
+            }
+        }
+
+        function handlePublisherSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('pub-input-title').value;
+            const ageGroup = document.getElementById('pub-input-age').value;
+            const category = document.getElementById('pub-input-cat').value;
+
+            const newBook = {
+                id: 'book-' + (AppState.books.length + 1),
+                title: title,
+                author: 'NXB Kim Đồng',
+                ageGroup: ageGroup,
+                category: category,
+                tier: 'pro',
+                coverBg: 'from-indigo-500 to-purple-600',
+                views: 0,
+                studioStatus: 'preview_ready',
+                description: 'Tác phẩm mới nộp kịch bản và đang hoàn thiện bản dựng 3D 360°.',
+                quiz: {
+                    question: 'Nội dung bài học rút ra từ tác phẩm là gì?',
+                    options: ['Biết yêu thương và chia sẻ', 'Cần chăm chỉ học tập', 'Tôn trọng thiên nhiên'],
+                    correctIndex: 0
+                }
+            };
+
+            AppState.books.push(newBook);
+            closeModal('modal-publisher-submit');
+            renderPublisherTable();
+            renderBookCatalog();
+            showToast(`✅ Đã gửi kịch bản "${title}" lên Studio ToMaTe! Quá trình dựng 3D đang khởi tạo.`);
+        }
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-subtab').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+
+            document.querySelectorAll('#portal-admin button[id^="admin-tab-btn-"]').forEach(btn => {
+                btn.className = 'pb-3 text-slate-500 hover:text-slate-800 flex items-center gap-2';
+            });
+            document.getElementById(`admin-tab-btn-${tab}`).className = 'pb-3 text-rose-600 border-b-2 border-rose-600 font-bold flex items-center gap-2';
+        }
+
+        function renderAdminPartners() {
+            const body = document.getElementById('admin-partner-requests-body');
+            if (!body) return;
+
+            body.innerHTML = AppState.partners.map(p => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 font-bold text-slate-800">${p.name}</td>
+                    <td class="p-3 font-mono text-slate-500">${p.taxCode}</td>
+                    <td class="p-3 font-bold text-indigo-600">${p.shareRate} NXB</td>
+                    <td class="p-3">
+                        ${p.status === 'approved' ? '<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Đã Ký Hợp Đồng & Cấp Account</span>' : '<span class="bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Chờ Duyệt Hồ Sơ</span>'}
+                    </td>
+                    <td class="p-3 text-right">
+                        ${p.status === 'pending' ? `<button onclick="approvePartner('${p.id}')" class="bg-rose-500 text-white font-bold px-3 py-1 rounded-lg text-xs hover:bg-rose-600 shadow">Duyệt & Phát Hành Hợp Đồng</button>` : '<span class="text-slate-400">Hoàn tất</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function approvePartner(id) {
+            const p = AppState.partners.find(item => item.id === id);
+            if (p) {
+                p.status = 'approved';
+                renderAdminPartners();
+                showToast(`✅ Admin đã duyệt hồ sơ & ký hợp đồng điện tử thành công cho: ${p.name}`);
+            }
+        }
+
+        function renderAdminModeration() {
+            const container = document.getElementById('admin-moderation-list');
+            if (!container) return;
+
+            const pendingMods = AppState.books;
+            container.innerHTML = pendingMods.map(b => `
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm">${b.title}</h4>
+                            <p class="text-slate-500">${b.author} • ${b.ageGroup} tuổi</p>
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Checklist An Toàn: 100% Passed</span>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border text-slate-600">
+                        ✓ Lời đọc kể chuyện không từ ngữ bạo lực.<br>
+                        ✓ Đã tối ưu góc xoay Spatial Audio 360° không gây chóng mặt.<br>
+                        ✓ AI Tutor hỏi đáp tích cực.
+                    </div>
+                    <div class="pt-2 flex justify-end gap-2">
+                        <button onclick="launch3DReader('${b.id}', true)" class="px-3 py-1.5 bg-slate-200 font-semibold rounded-lg">Kiểm Tra 3D</button>
+                        <button onclick="showToast('Sách đã đạt chuẩn xuất bản sàn!')" class="px-3 py-1.5 bg-emerald-600 text-white font-bold rounded-lg shadow">Duyệt Niêm Yết Sàn</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminReconciliation() {
+            const container = document.getElementById('admin-reconciliation-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="space-y-3 text-xs">
+                    <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-xl">
+                        <div>
+                            <span class="text-slate-500">Kỳ Đối Soát:</span>
+                            <p class="font-bold text-slate-900">Tháng 10 / 2026</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Tổng Doanh Thu Sàn:</span>
+                            <p class="font-bold text-emerald-600">128.500.000 ₫</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-500">Doanh Thu Trả NXB (65%):</span>
+                            <p class="font-bold text-indigo-600">83.525.000 ₫</p>
+                        </div>
+                    </div>
+                    <p class="text-slate-500">Hệ thống đã tự động tính toán đối soát từ ${AppState.books.length} đầu sách ảo phát sinh giao dịch lượt đọc & gói đăng ký tháng.</p>
+                </div>
+            `;
+        }
+
+        function triggerReconciliation() {
+            showToast('🔄 Đã thực hiện đối soát tài chính tự động với cổng thanh toán & xuất lệnh chi cho NXB!');
+        }
+
+        function renderParentHistory() {
+            const container = document.getElementById('parent-history-list');
+            if (!container) return;
+
+            container.innerHTML = AppState.experienceHistory.map(h => `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-slate-800">${h.kidName}</span>
+                            <span class="text-slate-400">• ${h.date}</span>
+                        </div>
+                        <p class="text-slate-600 font-medium">${h.bookTitle}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">${h.durationMin} phút</span>
+                        <p class="text-[10px] text-emerald-600 font-semibold mt-0.5">Điểm AI: ${h.score}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Populate select box in feedback modal
+            const select = document.getElementById('feedback-book-select');
+            if (select) {
+                select.innerHTML = AppState.books.map(b => `<option value="${b.id}">${b.title}</option>`).join('');
+            }
+        }
+
+        function handleFeedbackSubmit(e) {
+            e.preventDefault();
+            closeModal('modal-feedback');
+            showToast('❤️ Cảm ơn phụ huynh đã đóng góp feedback! Ý kiến đã được gửi tới Nhà xuất bản.');
+        }
+
+        // THREE.JS VIRTUAL BOOK READER IMPLEMENTATION
+        let threeScene, threeCamera, threeRenderer, bookMesh, is3DInitialized = false;
+        let spatialAudioActive = true;
+        let currentActiveBook = null;
+
+        function launch3DReader(bookId, isPreview) {
+            currentActiveBook = AppState.books.find(b => b.id === bookId) || AppState.books[0];
+            
+            document.getElementById('reader-book-title').innerText = currentActiveBook.title + (isPreview ? ' (Bản Xem Trước Preview)' : ' (Full 3D Experience)');
+            document.getElementById('modal-reader-3d').classList.remove('hidden');
+
+            initThreeJSScene();
+            showToast(`✨ Đang khởi tạo không gian sách 3D 360° cho: ${currentActiveBook.title}`);
+        }
+
+        function close3DReader() {
+            document.getElementById('modal-reader-3d').classList.add('hidden');
+            if (threeRenderer) {
+                threeRenderer.dispose();
+                is3DInitialized = false;
+            }
+        }
+
+        function initThreeJSScene() {
+            const container = document.getElementById('three-canvas-container');
+            if (!container) return;
+
+            // Remove existing canvas if any
+            const oldCanvas = container.querySelector('canvas');
+            if (oldCanvas) oldCanvas.remove();
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 1. Scene
+            threeScene = new THREE.Scene();
+            threeScene.background = new THREE.Color(0x0f172a); // Slate-900
+
+            // 2. Camera
+            threeCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+            threeCamera.position.set(0, 0, 5);
+
+            // 3. Renderer
+            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
+            threeRenderer.setSize(width, height);
+            threeRenderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(threeRenderer.domElement);
+
+            // 4. Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            threeScene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xf59e0b, 1.5, 50);
+            pointLight.position.set(2, 3, 4);
+            threeScene.add(pointLight);
+
+            // 5. Create 3D Interactive Virtual Book Object
+            const geometry = new THREE.BoxGeometry(2.5, 3.2, 0.4);
+            const materials = [
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }), // side
+                new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }), // side
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc }), // top
+                new THREE.MeshStandardMaterial({ color: 0xf8fafc }), // bottom
+                new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.3 }), // cover front
+                new THREE.MeshStandardMaterial({ color: 0xbe123c })  // cover back
+            ];
+
+            bookMesh = new THREE.Mesh(geometry, materials);
+            threeScene.add(bookMesh);
+
+            // 6. Add background environment particles
+            const particlesGeo = new THREE.BufferGeometry();
+            const count = 150;
+            const posArray = new Float32Array(count * 3);
+
+            for (let i = 0; i < count * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 15;
+            }
+            particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMat = new THREE.PointsMaterial({ size: 0.05, color: 0xf59e0b });
+            const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
+            threeScene.add(particlesMesh);
+
+            // Mouse rotation interactive logic
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+
+            const domElem = threeRenderer.domElement;
+            domElem.addEventListener('mousedown', (e) => { isDragging = true; });
+            domElem.addEventListener('mousemove', (e) => {
+                if (isDragging && bookMesh) {
+                    const deltaMove = {
+                        x: e.clientX - previousMousePosition.x,
+                        y: e.clientY - previousMousePosition.y
+                    };
+                    bookMesh.rotation.y += deltaMove.x * 0.01;
+                    bookMesh.rotation.x += deltaMove.y * 0.01;
+                }
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Touch events for mobile responsiveness
+            domElem.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                if (e.touches[0]) {
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+            domElem.addEventListener('touchmove', (e) => {
+                if (isDragging && bookMesh && e.touches[0]) {
+                    const deltaMove = {
+                        x: e.touches[0].clientX - previousMousePosition.x,
+                        y: e.touches[0].clientY - previousMousePosition.y
+                    };
+                    bookMesh.rotation.y += deltaMove.x * 0.01;
+                    bookMesh.rotation.x += deltaMove.y * 0.01;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+            domElem.addEventListener('touchend', () => { isDragging = false; });
+
+            // Animation Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                if (bookMesh && !isDragging) {
+                    bookMesh.rotation.y += 0.005; // Gentle rotation
+                }
+                if (particlesMesh) {
+                    particlesMesh.rotation.y += 0.001;
+                }
+                threeRenderer.render(threeScene, threeCamera);
+            }
+            animate();
+
+            // Handle Resize
+            window.addEventListener('resize', () => {
+                if (!container || !threeRenderer) return;
+                const newW = container.clientWidth;
+                const newH = container.clientHeight;
+                threeCamera.aspect = newW / newH;
+                threeCamera.updateProjectionMatrix();
+                threeRenderer.setSize(newW, newH);
+            });
+        }
+
+        function toggleSpatialAudio() {
+            spatialAudioActive = !spatialAudioActive;
+            const btn = document.getElementById('btn-spatial-audio');
+            if (spatialAudioActive) {
+                btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5';
+                btn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4"></i><span class="hidden sm:inline">Âm Thanh Vòm 3D On</span>`;
+                showToast('🔊 Đã bật Spatial Audio - Sound effect định hướng theo vị trí 3D');
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 text-xs font-semibold flex items-center gap-1.5';
+                btn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4"></i><span class="hidden sm:inline">Âm Thanh Vòm Off</span>`;
+                showToast('🔇 Đã tắt Spatial Audio');
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function triggerAiTutor() {
+            const popover = document.getElementById('ai-tutor-popover');
+            if (!popover) return;
+
+            popover.classList.remove('hidden');
+
+            if (currentActiveBook && currentActiveBook.quiz) {
+                document.getElementById('ai-tutor-question-text').innerText = `"${currentActiveBook.quiz.question}"`;
+                
+                const choicesContainer = document.getElementById('ai-tutor-answers-grid');
+                choicesContainer.innerHTML = currentActiveBook.quiz.options.map((opt, idx) => `
+                    <button onclick="answerAiTutor(${idx})" class="w-full text-left p-2 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:border-rose-300 transition font-medium text-slate-700">
+                        ${String.fromCharCode(65 + idx)}. ${opt}
+                    </button>
+                `).join('');
+            }
+        }
+
+        function closeAiTutor() {
+            document.getElementById('ai-tutor-popover').classList.add('hidden');
+        }
+
+        function answerAiTutor(choiceIdx) {
+            if (currentActiveBook && currentActiveBook.quiz) {
+                if (choiceIdx === currentActiveBook.quiz.correctIndex) {
+                    showToast('🎉 Bé trả lời chính xác! +10 Điểm thưởng tư duy AI Tutor');
+                } else {
+                    showToast('💡 Rất tiếc chưa đúng. Hãy xem lại diễn biến câu chuyện nhé!');
+                }
+            }
+            closeAiTutor();
+        }
+
+        function nextBookScene() {
+            showToast('▶️ Đã chuyển sang cảnh 3D tiếp theo trong kịch bản');
+            document.getElementById('reader-progress-percent').innerText = '85%';
+        }
+
+        function prevBookScene() {
+            showToast('◀️ Quay lại cảnh trước');
+        }
+
+        function finishBookSession() {
+            close3DReader();
+            const activeKid = AppState.kidsProfiles.find(k => k.id === AppState.activeKidId);
+            
+            // Add session record
+            AppState.experienceHistory.unshift({
+                id: 'h-' + (AppState.experienceHistory.length + 1),
+                kidName: activeKid ? activeKid.name : 'Bé Bo',
+                bookTitle: currentActiveBook ? currentActiveBook.title : 'Dế Mèn Phiêu Lưu Ký',
+                durationMin: 20,
+                score: '10/10',
+                date: 'Vừa xong'
+            });
+
+            renderParentHistory();
+            showToast('✅ Đã hoàn thành phiên trải nghiệm! Tiến trình & lịch sử tương tác đã lưu vào Dashboard Phụ Huynh.');
+        }
+
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        function handleCreateKid(e) {
+            e.preventDefault();
+            const name = document.getElementById('input-kid-name').value;
+            const ageGroup = document.getElementById('input-kid-age').value;
+
+            const newKid = {
+                id: 'kid-' + (AppState.kidsProfiles.length + 1),
+                name: name,
+                age: ageGroup,
+                ageLabel: ageGroup === '3-5' ? '4 tuổi' : ageGroup === '6-9' ? '7 tuổi' : '11 tuổi',
+                interests: ['Cổ tích', 'Kỹ năng']
+            };
+
+            AppState.kidsProfiles.push(newKid);
+            AppState.activeKidId = newKid.id;
+            closeModal('modal-create-kid');
+            renderKidProfiles();
+            selectKidProfile(newKid.id);
+            showToast(`✨ Đã tạo hồ sơ thành công cho: ${name}`);
+        }
+
+        function selectSubPlan(plan) {
+            AppState.subscription.plan = plan;
+            if (plan === 'monthly') {
+                document.getElementById('plan-card-monthly').className = 'border-2 border-indigo-600 bg-indigo-50/50 p-4 rounded-2xl cursor-pointer relative space-y-2';
+                document.getElementById('plan-card-yearly').className = 'border-2 border-slate-200 p-4 rounded-2xl cursor-pointer hover:border-slate-300 space-y-2';
+            } else {
+                document.getElementById('plan-card-yearly').className = 'border-2 border-emerald-600 bg-emerald-50/50 p-4 rounded-2xl cursor-pointer relative space-y-2';
+                document.getElementById('plan-card-monthly').className = 'border-2 border-slate-200 p-4 rounded-2xl cursor-pointer hover:border-slate-300 space-y-2';
+            }
+        }
+
+        function processCheckout() {
+            closeModal('modal-subscription');
+            AppState.subscription.status = 'Pro VIP (Đã gia hạn)';
+            document.getElementById('current-subscription-badge').innerText = 'Gói Pro VIP (Hoạt động)';
+            showToast('💳 Giao dịch thanh toán trực tuyến thành công! Đã kích hoạt quyền đọc full kho sách 3D.');
+        }
+
+        // Global Toast Notification Helper
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 text-white text-xs font-medium px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transform transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto';
+            toast.innerHTML = `
+                <span class="text-rose-400 font-bold">🍅 ToMaTe:</span>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+
+            // Remove after 3.5s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
